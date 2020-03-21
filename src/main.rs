@@ -14,11 +14,13 @@ use std::{
     thread,
     time::Duration,
 };
+use crossterm::event::MouseEvent;
 
 mod net;
 
-pub enum Event<I> {
-    Input(I),
+pub enum Event<I,J> {
+    Key(I),
+    Mouse(J),
 }
 
 pub struct StatefulTable<'a> {
@@ -95,7 +97,9 @@ async fn main() -> Result<(), failure::Error> {
             // poll for tick rate duration, if no events, sent tick event.
             if event::poll(Duration::from_millis(200)).unwrap() {
                 if let CEvent::Key(key) = event::read().unwrap() {
-                    tx.send(Event::Input(key)).unwrap();
+                    tx.send(Event::Key(key)).unwrap();
+                } else if let CEvent::Mouse(mouse) = event::read().unwrap(){
+                    tx.send(Event::Mouse(mouse)).unwrap();
                 }
             }
         }
@@ -157,7 +161,7 @@ async fn main() -> Result<(), failure::Error> {
         })?;
 
         match rx.recv()? {
-            Event::Input(event) => match event.code {
+            Event::Key(event) => match event.code {
                 KeyCode::Char('q') => {
                     disable_raw_mode()?;
                     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
@@ -171,6 +175,15 @@ async fn main() -> Result<(), failure::Error> {
                     table.previous();
                 }
                 _ => {}
+            },
+            Event::Mouse(event) => match event{
+                MouseEvent::ScrollDown(_, _, _) => {
+                    table.previous();
+                },
+                MouseEvent::ScrollUp(_, _, _) => {
+                    table.next();
+                },
+                _ => {},
             },
         }
     }
