@@ -9,5 +9,6 @@ edition = "2018"
 [dependencies]
 tui = {git = "https://github.com/fdehau/tui-rs.git", default-features = false, features = ["crossterm"]}
 crossterm = {git = "https://github.com/crossterm-rs/crossterm.git"}
-reqwest = {version = "0.10.4", default-features = false, features = ["rustls-tls", "streaming"]}
+reqwest = {version = "0.10.4", default-features = false, features = ["rustls-tls", "stream"]}
 tokio = {version = "0.2.13", features = ["full"]}
+failure = "0.1"
