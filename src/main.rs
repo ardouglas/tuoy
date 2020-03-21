@@ -3,10 +3,10 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use tui::{backend::CrosstermBackend, Terminal};
 use tui::layout::{Constraint, Layout};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, Row, Table, TableState};
+use tui::{backend::CrosstermBackend, Terminal};
 
 use std::{
     io::{stdout, Write},
@@ -16,7 +16,6 @@ use std::{
 };
 
 mod net;
-
 
 pub enum Event<I> {
     Input(I),
@@ -30,8 +29,8 @@ pub struct StatefulTable<'a> {
 impl<'a> StatefulTable<'a> {
     fn new(rows: Vec<&'a str>) -> StatefulTable<'a> {
         let mut items = Vec::new();
-        for row in rows{
-            if !row.starts_with("#"){
+        for row in rows {
+            if !row.starts_with('#') {
                 let split = row.split_ascii_whitespace().collect::<Vec<&str>>();
                 items.push(split);
             }
@@ -76,7 +75,7 @@ async fn main() -> Result<(), failure::Error> {
     let latest_obs_resp = net::get_latest_obs().await.unwrap();
 
     let body = latest_obs_resp.text().await.unwrap();
-    let split = body.split("\n");
+    let split = body.split('\n');
     let row_strs = split.collect::<Vec<&str>>();
 
     enable_raw_mode()?;
@@ -114,16 +113,22 @@ async fn main() -> Result<(), failure::Error> {
 
             let selected_style = Style::default().fg(Color::LightCyan);
             let normal_style = Style::default().fg(Color::White);
-            //#STN     LAT      LON  YYYY MM DD hh mm WDIR WSPD   GST WVHT  DPD APD MWD   PRES  PTDY  ATMP  WTMP  DEWP  VIS   TIDE
-            let header = ["stn", "lat", "lon", "year", "mo", "day", "hr", "min", "wdir", "wspd", "gst", "wvht", "dpd", "apd", "mwd", "pres", "ptdy", "atmp", "wtmp", "dewp", "vis", "tide"];
+
+            let header = [
+                "stn", "lat", "lon", "year", "mo", "day", "hr", "min", "wdir", "wspd", "gst",
+                "wvht", "dpd", "apd", "mwd", "pres", "ptdy", "atmp", "wtmp", "dewp", "vis", "tide",
+            ];
             let rows = table
                 .items
                 .iter()
-                .map(|i| Row::StyledData(i.into_iter(), normal_style));
+                .map(|i| Row::StyledData(i.iter(), normal_style));
             let t = Table::new(header.iter(), rows)
-                .block(Block::default().borders(Borders::ALL).title("Table"))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Latest Observations"),
+                )
                 .highlight_style(selected_style)
-                //.highlight_symbol(">> ")
                 .widths(&[
                     Constraint::Percentage(7),
                     Constraint::Percentage(5),
@@ -149,7 +154,6 @@ async fn main() -> Result<(), failure::Error> {
                     Constraint::Percentage(4),
                 ]);
             f.render_stateful_widget(t, rects[0], &mut table.state);
-
         })?;
 
         match rx.recv()? {
@@ -159,14 +163,14 @@ async fn main() -> Result<(), failure::Error> {
                     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
                     terminal.show_cursor()?;
                     break;
-                },
+                }
                 KeyCode::Down => {
                     table.next();
-                },
+                }
                 KeyCode::Up => {
                     table.previous();
-                },
-                _ => {},
+                }
+                _ => {}
             },
         }
     }
