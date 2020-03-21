@@ -108,7 +108,7 @@ async fn main() -> Result<(), failure::Error> {
         terminal.draw(|mut f| {
             let rects = Layout::default()
                 .constraints([Constraint::Percentage(100)].as_ref())
-                .margin(5)
+                .margin(2)
                 .split(f.size());
 
             let selected_style = Style::default().fg(Color::LightCyan);
