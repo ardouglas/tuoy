@@ -5,8 +5,8 @@ use crossterm::{
 };
 use tui::{backend::CrosstermBackend, Terminal};
 use tui::layout::{Constraint, Layout};
-use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, Borders, Row, Table, Widget, TableState};
+use tui::style::{Color, Style};
+use tui::widgets::{Block, Borders, Row, Table, TableState};
 
 use std::{
     io::{stdout, Write},
@@ -28,41 +28,18 @@ pub struct StatefulTable<'a> {
 }
 
 impl<'a> StatefulTable<'a> {
-    fn new() -> StatefulTable<'a> {
+    fn new(rows: Vec<&'a str>) -> StatefulTable<'a> {
+        let mut items = Vec::new();
+        for row in rows{
+            if !row.starts_with("#"){
+                let split = row.split_ascii_whitespace().collect::<Vec<&str>>();
+                items.push(split);
+            }
+        }
+
         StatefulTable {
             state: TableState::default(),
-            items: vec![
-                vec!["Row11", "Row12", "Row13"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row31", "Row32", "Row33"],
-                vec!["Row41", "Row42", "Row43"],
-                vec!["Row51", "Row52", "Row53"],
-                vec!["Row61", "Row62", "Row63"],
-                vec!["Row71", "Row72", "Row73"],
-                vec!["Row81", "Row82", "Row83"],
-                vec!["Row91", "Row92", "Row93"],
-                vec!["Row101", "Row102", "Row103"],
-                vec!["Row111", "Row112", "Row113"],
-                vec!["Row121", "Row122", "Row123"],
-                vec!["Row131", "Row132", "Row133"],
-                vec!["Row141", "Row142", "Row143"],
-                vec!["Row151", "Row152", "Row153"],
-                vec!["Row161", "Row162", "Row163"],
-                vec!["Row171", "Row172", "Row173"],
-                vec!["Row181", "Row182", "Row183"],
-                vec!["Row191", "Row192", "Row193"],
-                vec!["Row91", "Row92", "Row93"],
-                vec!["Row101", "Row102", "Row103"],
-                vec!["Row111", "Row112", "Row113"],
-                vec!["Row121", "Row122", "Row123"],
-                vec!["Row131", "Row132", "Row133"],
-                vec!["Row141", "Row142", "Row143"],
-                vec!["Row151", "Row152", "Row153"],
-                vec!["Row161", "Row162", "Row163"],
-                vec!["Row171", "Row172", "Row173"],
-                vec!["Row181", "Row182", "Row183"],
-                vec!["Row191", "Row192", "Row193"],
-            ],
+            items,
         }
     }
     pub fn next(&mut self) {
@@ -102,11 +79,6 @@ async fn main() -> Result<(), failure::Error> {
     let split = body.split("\n");
     let row_strs = split.collect::<Vec<&str>>();
 
-    
-
-
-    println!("{}", body);
-
     enable_raw_mode()?;
 
     let mut stdout = stdout();
@@ -130,7 +102,7 @@ async fn main() -> Result<(), failure::Error> {
         }
     });
 
-    let mut table = StatefulTable::new();
+    let mut table = StatefulTable::new(row_strs);
 
     // Input
     loop {
@@ -140,9 +112,10 @@ async fn main() -> Result<(), failure::Error> {
                 .margin(5)
                 .split(f.size());
 
-            let selected_style = Style::default().fg(Color::Yellow).modifier(Modifier::BOLD);
+            let selected_style = Style::default().fg(Color::LightCyan);
             let normal_style = Style::default().fg(Color::White);
-            let header = ["Header1", "Header2", "Header3"];
+            //#STN     LAT      LON  YYYY MM DD hh mm WDIR WSPD   GST WVHT  DPD APD MWD   PRES  PTDY  ATMP  WTMP  DEWP  VIS   TIDE
+            let header = ["stn", "lat", "lon", "year", "mo", "day", "hr", "min", "wdir", "wspd", "gst", "wvht", "dpd", "apd", "mwd", "pres", "ptdy", "atmp", "wtmp", "dewp", "vis", "tide"];
             let rows = table
                 .items
                 .iter()
@@ -150,11 +123,30 @@ async fn main() -> Result<(), failure::Error> {
             let t = Table::new(header.iter(), rows)
                 .block(Block::default().borders(Borders::ALL).title("Table"))
                 .highlight_style(selected_style)
-                .highlight_symbol(">> ")
+                //.highlight_symbol(">> ")
                 .widths(&[
-                    Constraint::Percentage(50),
-                    Constraint::Length(30),
-                    Constraint::Max(10),
+                    Constraint::Percentage(7),
+                    Constraint::Percentage(5),
+                    Constraint::Percentage(5),
+                    Constraint::Percentage(5),
+                    Constraint::Percentage(3),
+                    Constraint::Percentage(3),
+                    Constraint::Percentage(3),
+                    Constraint::Percentage(3),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
                 ]);
             f.render_stateful_widget(t, rects[0], &mut table.state);
 
