@@ -12,3 +12,4 @@ crossterm = {git = "https://github.com/crossterm-rs/crossterm.git"}
 reqwest = {version = "0.10.4", default-features = false, features = ["rustls-tls", "stream"]}
 tokio = {version = "0.2.13", features = ["full"]}
 failure = "0.1"
+roxmltree = "0.10.0"
