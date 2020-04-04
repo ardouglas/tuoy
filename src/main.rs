@@ -1,5 +1,5 @@
 use crossterm::{
-    event::{self, Event as CEvent, KeyCode},
+    event::{self, Event as CEvent, KeyCode, DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -7,7 +7,7 @@ use tui::layout::{Constraint, Layout};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, Row, Table, TableState};
 use tui::{backend::CrosstermBackend, Terminal};
-
+use std::fs::File;
 use std::{
     io::{stdout, Write},
     sync::mpsc,
@@ -32,13 +32,6 @@ pub struct StatefulTable {
 
 impl StatefulTable {
     fn new(rows: Vec<Vec<String>>) -> StatefulTable {
-        //let mut items = Vec::new();
-        //for row in rows {
-        //    if !row.starts_with('#') {
-        //        let split = row.split_ascii_whitespace().collect::<Vec<&str>>();
-        //        items.push(split);
-        //    }
-        //}
 
         StatefulTable {
             state: TableState::default(),
@@ -89,7 +82,7 @@ async fn main() -> Result<(), failure::Error> {
     enable_raw_mode()?;
 
     let mut stdout = stdout();
-    execute!(stdout, EnterAlternateScreen)?;
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
 
     let backend = CrosstermBackend::new(stdout);
 
@@ -99,12 +92,15 @@ async fn main() -> Result<(), failure::Error> {
     let (tx, rx) = mpsc::channel();
 
     thread::spawn(move || {
+        let mut evt_file = File::create("evt.log").unwrap();
         loop {
             // poll for tick rate duration, if no events, sent tick event.
             if event::poll(Duration::from_millis(200)).unwrap() {
                 if let CEvent::Key(key) = event::read().unwrap() {
+                    evt_file.write_all("key_event\n".as_bytes()).unwrap();
                     tx.send(Event::Key(key)).unwrap();
                 } else if let CEvent::Mouse(mouse) = event::read().unwrap(){
+                    evt_file.write_all("mouse_event\n".as_bytes()).unwrap();
                     tx.send(Event::Mouse(mouse)).unwrap();
                 }
             }
@@ -136,16 +132,16 @@ async fn main() -> Result<(), failure::Error> {
             let t = Table::new(header.iter(), rows)
                 .block(
                     Block::default()
-                        .borders(Borders::ALL)
+                        //.borders(Borders::ALL)
                         .title("Active Stations"),
                 )
                 .highlight_style(selected_style)
                 .widths(&[
                     Constraint::Percentage(5),
+                    Constraint::Percentage(30),
+                    Constraint::Percentage(4),
+                    Constraint::Percentage(4),
                     Constraint::Percentage(25),
-                    Constraint::Percentage(4),
-                    Constraint::Percentage(4),
-                    Constraint::Percentage(15),
                     Constraint::Percentage(10),
                     Constraint::Percentage(3),
                     Constraint::Percentage(3),
@@ -159,20 +155,23 @@ async fn main() -> Result<(), failure::Error> {
             Event::Key(event) => match event.code {
                 KeyCode::Char('q') => {
                     disable_raw_mode()?;
-                    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+                    execute!(terminal.backend_mut(), LeaveAlternateScreen, DisableMouseCapture)?;
                     terminal.show_cursor()?;
                     break;
                 }
                 KeyCode::Down => {
+                  
                     table.next();
                 }
                 KeyCode::Up => {
+                   
                     table.previous();
                 }
                 _ => {}
             },
             Event::Mouse(event) => match event{
                 MouseEvent::ScrollDown(_, _, _) => {
+                    
                     table.previous();
                 },
                 MouseEvent::ScrollUp(_, _, _) => {
